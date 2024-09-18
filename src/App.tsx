@@ -3,7 +3,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Copy, Trash2 } from "lucide-react";
+import { Search, Edit, Trash2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
@@ -19,6 +19,8 @@ function App() {
   const [newContent, setNewContent] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [autoDetect, setAutoDetect] = useState(false);
+  const [activeTab, setActiveTab] = useState("snippets");
+  const [editingSnippet, setEditingSnippet] = useState<Snippet | null>(null);
 
   useEffect(() => {
     // Load snippets from Chrome storage when the component mounts
@@ -39,16 +41,41 @@ function App() {
 
   const saveSnippet = () => {
     if (newCommand && newContent) {
-      const newSnippet: Snippet = {
-        id: Date.now().toString(),
-        command: newCommand,
-        content: newContent,
-      };
-      const updatedSnippets = [...snippets, newSnippet];
+      // Check for duplicate command
+      if (
+        snippets.some(
+          (snippet) =>
+            snippet.command === newCommand && snippet.id !== editingSnippet?.id
+        )
+      ) {
+        alert("A snippet with this command already exists!");
+        return;
+      }
+
+      let updatedSnippets: Snippet[];
+      if (editingSnippet) {
+        // Update existing snippet
+        updatedSnippets = snippets.map((snippet) =>
+          snippet.id === editingSnippet.id
+            ? { ...snippet, command: newCommand, content: newContent }
+            : snippet
+        );
+      } else {
+        // Create new snippet
+        const newSnippet: Snippet = {
+          id: Date.now().toString(),
+          command: newCommand,
+          content: newContent,
+        };
+        updatedSnippets = [...snippets, newSnippet];
+      }
+
       setSnippets(updatedSnippets);
       chrome.storage.local.set({ snippets: updatedSnippets });
       setNewCommand("");
       setNewContent("");
+      setEditingSnippet(null);
+      setActiveTab("snippets");
     }
   };
 
@@ -58,8 +85,11 @@ function App() {
     chrome.storage.local.set({ snippets: updatedSnippets });
   };
 
-  const copySnippet = (content: string) => {
-    navigator.clipboard.writeText(content);
+  const editSnippet = (snippet: Snippet) => {
+    setEditingSnippet(snippet);
+    setNewCommand(snippet.command);
+    setNewContent(snippet.content);
+    setActiveTab("add-snippets");
   };
 
   const filteredSnippets = snippets.filter(
@@ -81,10 +111,12 @@ function App() {
         </div>
       </div>
 
-      <Tabs defaultValue="snippets" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="snippets">Snippets</TabsTrigger>
-          <TabsTrigger value="add-snippets">Add Snippets</TabsTrigger>
+          <TabsTrigger value="add-snippets">
+            {editingSnippet ? "Edit Snippet" : "Add Snippet"}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="snippets">
           <div className="space-y-4 mt-4">
@@ -118,9 +150,9 @@ function App() {
                     </button>
                     <button
                       className="text-gray-500"
-                      onClick={() => copySnippet(snippet.content)}
+                      onClick={() => editSnippet(snippet)}
                     >
-                      <Copy size={16} />
+                      <Edit size={16} />
                     </button>
                   </div>
                 </CardContent>
@@ -157,7 +189,7 @@ function App() {
               className="w-full bg-black text-white hover:bg-gray-800"
               onClick={saveSnippet}
             >
-              Add snippet
+              {editingSnippet ? "Edit snippet" : "Add snippet"}
             </Button>
           </div>
         </TabsContent>

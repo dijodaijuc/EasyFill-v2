@@ -21,15 +21,19 @@ function App() {
   const [autoDetect, setAutoDetect] = useState(false);
   const [activeTab, setActiveTab] = useState("snippets");
   const [editingSnippet, setEditingSnippet] = useState<Snippet | null>(null);
+  const [triggerSymbol, setTriggerSymbol] = useState("-");
 
   useEffect(() => {
-    // Load snippets from Chrome storage when the component mounts
-    chrome.storage.local.get(["snippets", "autoDetect"], (result) => {
+    // Load snippets, autoDetect, and triggerSymbol from Chrome storage when the component mounts
+    chrome.storage.local.get(["snippets", "autoDetect", "triggerSymbol"], (result) => {
       if (result.snippets) {
         setSnippets(result.snippets);
       }
       if (result.autoDetect !== undefined) {
         setAutoDetect(result.autoDetect);
+      }
+      if (result.triggerSymbol) {
+        setTriggerSymbol(result.triggerSymbol);
       }
     });
   }, []);
@@ -38,6 +42,11 @@ function App() {
     // Save autoDetect status to Chrome storage whenever it changes
     chrome.storage.local.set({ autoDetect });
   }, [autoDetect]);
+
+  useEffect(() => {
+    // Save triggerSymbol to Chrome storage whenever it changes
+    chrome.storage.local.set({ triggerSymbol });
+  }, [triggerSymbol]);
 
   const saveSnippet = () => {
     if (newCommand && newContent) {
@@ -111,6 +120,17 @@ function App() {
         </div>
       </div>
 
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700">Trigger Symbol</label>
+        <Input
+          type="text"
+          value={triggerSymbol}
+          onChange={(e) => setTriggerSymbol(e.target.value)}
+          maxLength={1}
+          className="mt-1"
+        />
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="snippets">Snippets</TabsTrigger>
@@ -136,7 +156,7 @@ function App() {
               >
                 <CardContent className="p-4 flex items-center justify-between">
                   <div>
-                    <div className="font-semibold">{snippet.command}</div>
+                    <div className="font-semibold">{triggerSymbol}{snippet.command}</div>
                     <div className="text-sm text-gray-500">
                       {snippet.content.substring(0, 30)}...
                     </div>
@@ -165,12 +185,12 @@ function App() {
             <div>
               <label className="block mb-1 text-sm font-medium">Command</label>
               <Input
-                placeholder="Add your /command"
+                placeholder="Add your command"
                 value={newCommand}
                 onChange={(e) => setNewCommand(e.target.value)}
               />
               <p className="text-xs text-gray-500 mt-1">
-                Tip: Make it easy to remember
+                Tip: Make it easy to remember. Use {triggerSymbol}command to trigger.
               </p>
             </div>
             <div>

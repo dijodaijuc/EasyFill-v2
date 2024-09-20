@@ -10,6 +10,7 @@ import {
   FolderPlus,
   Upload,
   Download,
+  Copy,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -88,7 +89,10 @@ function App() {
                 ...snippet,
                 command: newCommand,
                 content: newContent,
-                category: selectedCategory || "Uncategorized",
+                category:
+                  selectedCategory === "all"
+                    ? "Uncategorized"
+                    : selectedCategory,
               }
             : snippet
         );
@@ -97,7 +101,8 @@ function App() {
           id: Date.now().toString(),
           command: newCommand,
           content: newContent,
-          category: selectedCategory || "Uncategorized",
+          category:
+            selectedCategory === "all" ? "Uncategorized" : selectedCategory,
         };
         updatedSnippets = [...snippets, newSnippet];
       }
@@ -185,6 +190,17 @@ function App() {
     }
   };
 
+  const copySnippetContent = (content: string) => {
+    navigator.clipboard.writeText(content).then(
+      () => {
+        alert("Snippet copied to clipboard!");
+      },
+      (err) => {
+        console.error("Could not copy text: ", err);
+      }
+    );
+  };
+
   return (
     <div className="w-80 h-[600px] px-4 py-4 overflow-y-auto">
       <div className="flex justify-between items-center mb-4">
@@ -260,10 +276,16 @@ function App() {
                       {snippet.content.substring(0, 30)}...
                     </div>
                     <div className="text-xs text-gray-400">
-                      {snippet.category || "Uncategorized"}
+                      {snippet.category}
                     </div>
                   </div>
                   <div className="flex space-x-2">
+                    <button
+                      className="text-gray-500"
+                      onClick={() => copySnippetContent(snippet.content)}
+                    >
+                      <Copy size={16} />
+                    </button>
                     <button
                       className="text-gray-500"
                       onClick={() => deleteSnippet(snippet.id)}

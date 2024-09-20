@@ -260,7 +260,7 @@ function App() {
                       {snippet.content.substring(0, 30)}...
                     </div>
                     <div className="text-xs text-gray-400">
-                      Category: {snippet.category || "Uncategorized"}
+                      {snippet.category || "Uncategorized"}
                     </div>
                   </div>
                   <div className="flex space-x-2">

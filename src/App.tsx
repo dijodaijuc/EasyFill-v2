@@ -1,28 +1,11 @@
-import { useState, useEffect, useRef } from "react";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Search,
-  Edit,
-  Trash2,
-  FolderPlus,
-  Upload,
-  Moon,
-  Sun,
-  Download,
-  Copy,
-} from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { TriggerSymbolInput } from "./components/ui/TriggerSymbolInput";
+import { Header } from "./components/ui/Header";
+import { SearchInput } from "./components/ui/SearchInput";
+import { SnippetForm } from "./components/ui/SnippetForm";
+import { SnippetList } from "./components/ui/SnippetList";
+import { ImportExportButtons } from "./components/ui/ImportExportButtons";
 
 interface Snippet {
   id: string;
@@ -49,7 +32,6 @@ function App() {
   const [triggerSymbol, setTriggerSymbol] = useState("-");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
@@ -71,7 +53,7 @@ function App() {
       setDarkMode(JSON.parse(savedMode));
       return;
     }
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
     const handleChange = (event: MediaQueryListEvent) => {
       setDarkMode(event.matches);
     };
@@ -166,13 +148,6 @@ function App() {
     }
   };
 
-  const filteredSnippets = snippets.filter(
-    (snippet) =>
-      (selectedCategory === "all" || snippet.category === selectedCategory) &&
-      (snippet.command.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        snippet.content.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
   const exportSnippets = () => {
     const dataStr = JSON.stringify({ snippets, categories }, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
@@ -214,7 +189,7 @@ function App() {
   const copySnippetContent = (content: string) => {
     navigator.clipboard.writeText(content).then(
       () => {
-        alert("Snippet copied to clipboard!");
+        console.log("Snippet copied to clipboard!");
       },
       (err) => {
         console.error("Could not copy text: ", err);
@@ -232,44 +207,17 @@ function App() {
         darkMode ? "bg-gray-900 text-white" : "bg-white text-black"
       }`}
     >
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold">EasyFill</h1>
-        <div className="flex items-center space-x-2">
-          <span
-            className={`text-xs font-medium 
-          ${darkMode ? "text-white" : "text-gray-500"}`}
-          >
-            Auto detect
-          </span>
-          <Switch
-            checked={autoDetect}
-            onCheckedChange={(checked) => setAutoDetect(checked)}
-            darkMode={darkMode}
-          />
-          {darkMode ? (
-            <Moon size={16} onClick={() => setDarkMode(!darkMode)} />
-          ) : (
-            <Sun size={16} onClick={() => setDarkMode(!darkMode)} />
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center space-x-2 mb-4">
-        <label
-          className={`text-sm font-medium whitespace-nowrap
-          ${darkMode ? "text-white" : "text-gray-700"}`}
-        >
-          Trigger Symbol:
-        </label>
-        <Input
-          darkMode={darkMode}
-          type="text"
-          value={triggerSymbol}
-          onChange={(e) => setTriggerSymbol(e.target.value)}
-          maxLength={1}
-          className="w-full h-8"
-        />
-      </div>
+      <Header
+        setDarkMode={setDarkMode}
+        darkMode={darkMode}
+        autoDetect={autoDetect}
+        setAutoDetect={setAutoDetect}
+      />
+      <TriggerSymbolInput
+        darkMode={darkMode}
+        triggerSymbol={triggerSymbol}
+        setTriggerSymbol={setTriggerSymbol}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList darkMode={darkMode} className="grid w-full grid-cols-2">
@@ -282,205 +230,46 @@ function App() {
         </TabsList>
         <TabsContent darkMode={darkMode} value="snippets">
           <div className="space-y-4 mt-4">
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="Type a command or search..."
-                darkMode={darkMode}
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Select
-              value={selectedCategory}
-              onValueChange={setSelectedCategory}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.name}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {filteredSnippets.map((snippet) => (
-              <Card
-                darkMode={darkMode}
-                key={snippet.id}
-                className="rounded-md border shadow-none"
-              >
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold">
-                      {triggerSymbol}
-                      {snippet.command}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {snippet.content.substring(0, 30)}...
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {snippet.category}
-                    </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      className="text-gray-500"
-                      onClick={() => copySnippetContent(snippet.content)}
-                    >
-                      <Copy size={16} />
-                    </button>
-                    <button
-                      className="text-gray-500"
-                      onClick={() => deleteSnippet(snippet.id)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                    <button
-                      className="text-gray-500"
-                      onClick={() => editSnippet(snippet)}
-                    >
-                      <Edit size={16} />
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            <SearchInput
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+            />
+            <SnippetList
+              darkMode={darkMode}
+              snippets={snippets}
+              searchTerm={searchTerm}
+              selectedCategory={selectedCategory}
+              triggerSymbol={triggerSymbol}
+              onEdit={editSnippet}
+              onDelete={deleteSnippet}
+              onCopy={copySnippetContent}
+            />
           </div>
         </TabsContent>
         <TabsContent darkMode={darkMode} value="add-snippets">
-          <div className="space-y-4 mt-4">
-            <div>
-              <label className="block mb-1 text-sm font-medium">Command</label>
-              <Input
-                placeholder="Add your command"
-                darkMode={darkMode}
-                value={newCommand}
-                onChange={(e) => setNewCommand(e.target.value)}
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                {newCommand === "" ? (
-                  "Tip: Make it easier to remember"
-                ) : (
-                  <>
-                    Use {triggerSymbol}
-                    {newCommand} to expand the snippet.
-                  </>
-                )}
-              </p>
-            </div>
-            <div>
-              <label className="block mb-1 text-sm font-medium">
-                Text snippet
-              </label>
-              <Textarea
-                placeholder="Add snippet"
-                className="h-24"
-                value={newContent}
-                onChange={(e) => setNewContent(e.target.value)}
-              />
-              <p className="text-xs text-gray-500 mt-1">Max: 500 words</p>
-            </div>
-            <div>
-              <label className="block mb-1 text-sm font-medium">Category</label>
-              <div className="flex items-center space-x-2">
-                <Select
-                  value={selectedCategory}
-                  onValueChange={setSelectedCategory}
-                  disabled={categories.length === 0}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue
-                      placeholder={
-                        categories.length === 0
-                          ? "No categories added, add one"
-                          : "Select a category"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.name}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  darkMode={darkMode}
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowNewCategoryInput(!showNewCategoryInput)}
-                >
-                  <FolderPlus
-                    className={`${darkMode ? "text-black" : ""}`}
-                    size={16}
-                  />
-                </Button>
-              </div>
-            </div>
-            {showNewCategoryInput && (
-              <div className="flex items-center space-x-2">
-                <Input
-                  darkMode={darkMode}
-                  placeholder="New category name"
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                />
-                <Button onClick={addCategory}>
-                  <FolderPlus size={16} />
-                </Button>
-              </div>
-            )}
-            <Button
-              darkMode={darkMode}
-              className={`w-full text-white ${
-                darkMode
-                  ? " bg-gray-800 hover:bg-gray-600 "
-                  : " hover:bg-gray-800 bg-black"
-              }`}
-              onClick={saveSnippet}
-            >
-              {editingSnippet ? "Edit snippet" : "Add snippet"}
-            </Button>
-            <div className="flex justify-between space-x-2 mt-4">
-              <Button
-                darkMode={darkMode}
-                onClick={exportSnippets}
-                className={`flex-1 ${
-                  darkMode
-                    ? "hover:bg-gray-800"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                <Download size={16} className="mr-2" />
-                Export
-              </Button>
-              <Button
-                darkMode={darkMode}
-                onClick={() => fileInputRef.current?.click()}
-                className={`flex-1 ${
-                  darkMode
-                    ? "hover:bg-gray-800"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                <Upload size={16} className="mr-2" />
-                Import
-              </Button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: "none" }}
-                accept="application/json"
-                onChange={importSnippets}
-              />
-            </div>
-          </div>
+          <SnippetForm
+            darkMode={darkMode}
+            editingSnippet={editingSnippet}
+            newCommand={newCommand}
+            setNewCommand={setNewCommand}
+            newContent={newContent}
+            setNewContent={setNewContent}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            categories={categories}
+            onSave={saveSnippet}
+            triggerSymbol={triggerSymbol}
+            newCategory={newCategory}
+            setNewCategory={setNewCategory}
+            addCategory={addCategory}
+            showNewCategoryInput={showNewCategoryInput}
+            setShowNewCategoryInput={setShowNewCategoryInput}
+          />
+          <ImportExportButtons
+            darkMode={darkMode}
+            onExport={exportSnippets}
+            onImport={importSnippets}
+          />
         </TabsContent>
       </Tabs>
     </div>

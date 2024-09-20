@@ -6,6 +6,13 @@ import { SearchInput } from "./components/ui/SearchInput";
 import { SnippetForm } from "./components/ui/SnippetForm";
 import { SnippetList } from "./components/ui/SnippetList";
 import { ImportExportButtons } from "./components/ui/ImportExportButtons";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Snippet {
   id: string;
@@ -199,6 +206,22 @@ function App() {
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
             />
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.name}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <SnippetList
               snippets={snippets}
               searchTerm={searchTerm}

@@ -32,6 +32,7 @@ interface SnippetFormProps {
   setNewCategory: (value: string) => void;
   addCategory: () => void;
   showNewCategoryInput: boolean;
+  darkMode: boolean;
   setShowNewCategoryInput: (value: boolean) => void;
 }
 
@@ -39,6 +40,7 @@ export const SnippetForm: React.FC<SnippetFormProps> = ({
   editingSnippet,
   newCommand,
   setNewCommand,
+  darkMode,
   newContent,
   setNewContent,
   selectedCategory,
@@ -56,6 +58,7 @@ export const SnippetForm: React.FC<SnippetFormProps> = ({
     <div>
       <label className="block mb-1 text-sm font-medium">Command</label>
       <Input
+        darkMode={darkMode}
         placeholder="Add your command"
         value={newCommand}
         onChange={(e) => setNewCommand(e.target.value)}
@@ -84,6 +87,7 @@ export const SnippetForm: React.FC<SnippetFormProps> = ({
     <div>
       <label className="block mb-1 text-sm font-medium">Category</label>
       <CategorySelect
+        darkMode={darkMode}
         categories={categories}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
@@ -98,7 +102,12 @@ export const SnippetForm: React.FC<SnippetFormProps> = ({
       />
     )}
     <Button
-      className="w-full bg-black text-white hover:bg-gray-800"
+      darkMode={darkMode}
+      className={`w-full text-white ${
+        darkMode
+          ? " bg-gray-800 hover:bg-gray-600 "
+          : " hover:bg-gray-800 bg-black"
+      }`}
       onClick={onSave}
     >
       {editingSnippet ? "Edit snippet" : "Add snippet"}

@@ -39,6 +39,7 @@ function App() {
   const [triggerSymbol, setTriggerSymbol] = useState("-");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
     chrome.storage.local.get(
@@ -50,6 +51,24 @@ function App() {
         if (result.triggerSymbol) setTriggerSymbol(result.triggerSymbol);
       }
     );
+  }, []);
+
+  useEffect(() => {
+    // Check for user's preferred color scheme
+    const savedMode = localStorage.getItem("darkMode");
+    if (savedMode) {
+      setDarkMode(JSON.parse(savedMode));
+      return;
+    }
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
+    const handleChange = (event: MediaQueryListEvent) => {
+      setDarkMode(event.matches);
+    };
+    setDarkMode(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -185,22 +204,38 @@ function App() {
     );
   };
 
+  useEffect(() => {
+    localStorage.setItem("darkMode", JSON.stringify(darkMode));
+  }, [darkMode]);
+
   return (
-    <div className="w-80 h-[600px] px-4 py-4 overflow-y-auto">
-      <Header autoDetect={autoDetect} setAutoDetect={setAutoDetect} />
+    <div
+      className={`w-80 h-[600px] px-4 py-4 ${
+        darkMode ? "bg-gray-900 text-white" : "bg-white text-black"
+      }`}
+    >
+      <Header
+        setDarkMode={setDarkMode}
+        darkMode={darkMode}
+        autoDetect={autoDetect}
+        setAutoDetect={setAutoDetect}
+      />
       <TriggerSymbolInput
+        darkMode={darkMode}
         triggerSymbol={triggerSymbol}
         setTriggerSymbol={setTriggerSymbol}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="snippets">Snippets</TabsTrigger>
-          <TabsTrigger value="add-snippets">
+        <TabsList darkMode={darkMode} className="grid w-full grid-cols-2">
+          <TabsTrigger darkMode={darkMode} value="snippets">
+            Snippets
+          </TabsTrigger>
+          <TabsTrigger darkMode={darkMode} value="add-snippets">
             {editingSnippet ? "Edit Snippet" : "Add Snippet"}
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="snippets">
+        <TabsContent darkMode={darkMode} value="snippets">
           <div className="space-y-4 mt-4">
             <SearchInput
               searchTerm={searchTerm}
@@ -223,6 +258,7 @@ function App() {
               </SelectContent>
             </Select>
             <SnippetList
+              darkMode={darkMode}
               snippets={snippets}
               searchTerm={searchTerm}
               selectedCategory={selectedCategory}
@@ -233,8 +269,9 @@ function App() {
             />
           </div>
         </TabsContent>
-        <TabsContent value="add-snippets">
+        <TabsContent darkMode={darkMode} value="add-snippets">
           <SnippetForm
+            darkMode={darkMode}
             editingSnippet={editingSnippet}
             newCommand={newCommand}
             setNewCommand={setNewCommand}
@@ -252,6 +289,7 @@ function App() {
             setShowNewCategoryInput={setShowNewCategoryInput}
           />
           <ImportExportButtons
+            darkMode={darkMode}
             onExport={exportSnippets}
             onImport={importSnippets}
           />

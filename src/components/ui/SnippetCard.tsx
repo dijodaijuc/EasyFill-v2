@@ -11,6 +11,7 @@ interface Snippet {
 
 interface SnippetCardProps {
   snippet: Snippet;
+  darkMode: boolean;
   triggerSymbol: string;
   onEdit: () => void;
   onDelete: () => void;
@@ -19,12 +20,13 @@ interface SnippetCardProps {
 
 export const SnippetCard: React.FC<SnippetCardProps> = ({
   snippet,
+  darkMode,
   triggerSymbol,
   onEdit,
   onDelete,
   onCopy,
 }) => (
-  <Card className="bg-white rounded-md border shadow-none">
+  <Card darkMode={darkMode} className="rounded-md border shadow-none">
     <CardContent className="p-4 flex items-center justify-between">
       <div>
         <div className="font-semibold">

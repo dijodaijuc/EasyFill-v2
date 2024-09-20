@@ -17,6 +17,7 @@ interface Category {
 interface CategorySelectProps {
   categories: Category[];
   selectedCategory: string;
+  darkMode: boolean;
   setSelectedCategory: (value: string) => void;
   onNewCategory: () => void;
 }
@@ -25,6 +26,7 @@ export const CategorySelect: React.FC<CategorySelectProps> = ({
   categories,
   selectedCategory,
   setSelectedCategory,
+  darkMode,
   onNewCategory,
 }) => (
   <div className="flex items-center space-x-2">
@@ -51,7 +53,7 @@ export const CategorySelect: React.FC<CategorySelectProps> = ({
       </SelectContent>
     </Select>
     <Button variant="outline" size="icon" onClick={onNewCategory}>
-      <FolderPlus size={16} />
+      <FolderPlus className={`${darkMode ? "text-black" : ""}`} size={16} />
     </Button>
   </div>
 );

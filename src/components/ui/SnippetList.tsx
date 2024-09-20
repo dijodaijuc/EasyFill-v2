@@ -13,6 +13,7 @@ interface SnippetListProps {
   searchTerm: string;
   selectedCategory: string;
   triggerSymbol: string;
+  darkMode: boolean;
   onEdit: (snippet: Snippet) => void;
   onDelete: (id: string) => void;
   onCopy: (content: string) => void;
@@ -23,6 +24,7 @@ export const SnippetList: React.FC<SnippetListProps> = ({
   searchTerm,
   selectedCategory,
   triggerSymbol,
+  darkMode,
   onEdit,
   onDelete,
   onCopy,
@@ -39,6 +41,7 @@ export const SnippetList: React.FC<SnippetListProps> = ({
       {filteredSnippets.map((snippet) => (
         <SnippetCard
           key={snippet.id}
+          darkMode={darkMode}
           snippet={snippet}
           triggerSymbol={triggerSymbol}
           onEdit={() => onEdit(snippet)}

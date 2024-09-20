@@ -91,7 +91,6 @@ const handleTextReplacement = async (element: HTMLElement) => {
     if (regex.test(text)) {
       const replacedContent = await replaceVariables(snippet.content);
       const updatedText = text.replace(regex, replacedContent);
-      const cursorPosition = updatedText.length;
 
       // Update content and apply animation
       if (element.isContentEditable) {
@@ -100,7 +99,8 @@ const handleTextReplacement = async (element: HTMLElement) => {
         const range = document.createRange();
         const sel = window.getSelection();
         if (element.firstChild) {
-          range.setStart(element.firstChild, cursorPosition);
+          const newPosition = Math.min(updatedText.length, element.firstChild.textContent?.length || 0);
+          range.setStart(element.firstChild, newPosition);
           range.collapse(true);
           sel?.removeAllRanges();
           sel?.addRange(range);
@@ -111,7 +111,8 @@ const handleTextReplacement = async (element: HTMLElement) => {
       ) {
         (element as HTMLInputElement | HTMLTextAreaElement).value = updatedText;
         // Set cursor position for input and textarea elements
-        (element as HTMLInputElement | HTMLTextAreaElement).setSelectionRange(cursorPosition, cursorPosition);
+        const newPosition = Math.min(updatedText.length, (element as HTMLInputElement | HTMLTextAreaElement).value.length);
+        (element as HTMLInputElement | HTMLTextAreaElement).setSelectionRange(newPosition, newPosition);
       }
 
       // Apply animation class

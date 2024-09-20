@@ -3,91 +3,73 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Edit, Trash2 } from "lucide-react";
+import {
+  Search,
+  Edit,
+  Trash2,
+  FolderPlus,
+  Upload,
+  Download,
+} from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Snippet {
   id: string;
   command: string;
   content: string;
+  category: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
 }
 
 function App() {
   const [snippets, setSnippets] = useState<Snippet[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [newCommand, setNewCommand] = useState("");
   const [newContent, setNewContent] = useState("");
+  const [newCategory, setNewCategory] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [autoDetect, setAutoDetect] = useState(false);
   const [activeTab, setActiveTab] = useState("snippets");
   const [editingSnippet, setEditingSnippet] = useState<Snippet | null>(null);
   const [triggerSymbol, setTriggerSymbol] = useState("-");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const exportSnippets = () => {
-    const dataStr = JSON.stringify(snippets, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "snippets.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const importSnippets = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const importedSnippets = JSON.parse(event.target?.result as string);
-          if (Array.isArray(importedSnippets)) {
-            setSnippets(importedSnippets);
-            chrome.storage.local.set({ snippets: importedSnippets });
-            alert("Snippets imported successfully!");
-          } else {
-            alert("Invalid file format");
-          }
-        } catch (error) {
-          alert("Error reading file");
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
-
   useEffect(() => {
-    // Load snippets, autoDetect, and triggerSymbol from Chrome storage when the component mounts
     chrome.storage.local.get(
-      ["snippets", "autoDetect", "triggerSymbol"],
+      ["snippets", "categories", "autoDetect", "triggerSymbol"],
       (result) => {
-        if (result.snippets) {
-          setSnippets(result.snippets);
-        }
-        if (result.autoDetect !== undefined) {
-          setAutoDetect(result.autoDetect);
-        }
-        if (result.triggerSymbol) {
-          setTriggerSymbol(result.triggerSymbol);
-        }
+        if (result.snippets) setSnippets(result.snippets);
+        if (result.categories) setCategories(result.categories);
+        if (result.autoDetect !== undefined) setAutoDetect(result.autoDetect);
+        if (result.triggerSymbol) setTriggerSymbol(result.triggerSymbol);
       }
     );
   }, []);
 
   useEffect(() => {
-    // Save autoDetect status to Chrome storage whenever it changes
     chrome.storage.local.set({ autoDetect });
   }, [autoDetect]);
 
   useEffect(() => {
-    // Save triggerSymbol to Chrome storage whenever it changes
     chrome.storage.local.set({ triggerSymbol });
   }, [triggerSymbol]);
 
   const saveSnippet = () => {
     if (newCommand && newContent) {
-      // Check for duplicate command
       if (
         snippets.some(
           (snippet) =>
@@ -100,18 +82,22 @@ function App() {
 
       let updatedSnippets: Snippet[];
       if (editingSnippet) {
-        // Update existing snippet
         updatedSnippets = snippets.map((snippet) =>
           snippet.id === editingSnippet.id
-            ? { ...snippet, command: newCommand, content: newContent }
+            ? {
+                ...snippet,
+                command: newCommand,
+                content: newContent,
+                category: selectedCategory || "Uncategorized",
+              }
             : snippet
         );
       } else {
-        // Create new snippet
         const newSnippet: Snippet = {
           id: Date.now().toString(),
           command: newCommand,
           content: newContent,
+          category: selectedCategory || "Uncategorized",
         };
         updatedSnippets = [...snippets, newSnippet];
       }
@@ -121,6 +107,7 @@ function App() {
       setNewCommand("");
       setNewContent("");
       setEditingSnippet(null);
+      setSelectedCategory("all");
       setActiveTab("snippets");
     }
   };
@@ -135,17 +122,71 @@ function App() {
     setEditingSnippet(snippet);
     setNewCommand(snippet.command);
     setNewContent(snippet.content);
+    setSelectedCategory(snippet.category);
     setActiveTab("add-snippets");
+  };
+
+  const addCategory = () => {
+    if (newCategory && !categories.some((cat) => cat.name === newCategory)) {
+      const updatedCategories = [
+        ...categories,
+        { id: Date.now().toString(), name: newCategory },
+      ];
+      setCategories(updatedCategories);
+      chrome.storage.local.set({ categories: updatedCategories });
+      setNewCategory("");
+      setShowNewCategoryInput(false);
+      setSelectedCategory(newCategory);
+    }
   };
 
   const filteredSnippets = snippets.filter(
     (snippet) =>
-      snippet.command.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      snippet.content.toLowerCase().includes(searchTerm.toLowerCase())
+      (selectedCategory === "all" || snippet.category === selectedCategory) &&
+      (snippet.command.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        snippet.content.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const exportSnippets = () => {
+    const dataStr = JSON.stringify({ snippets, categories }, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "snippets_export.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importSnippets = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const imported = JSON.parse(event.target?.result as string);
+          if (imported.snippets && imported.categories) {
+            setSnippets(imported.snippets);
+            setCategories(imported.categories);
+            chrome.storage.local.set({
+              snippets: imported.snippets,
+              categories: imported.categories,
+            });
+            alert("Snippets and categories imported successfully!");
+          } else {
+            alert("Invalid file format");
+          }
+        } catch (error) {
+          console.error("Error importing snippets:", error);
+          alert("Error reading file");
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
   return (
-    <div className="w-80 h-[600px] px-4 py-4">
+    <div className="w-80 h-[600px] px-4 py-4 overflow-y-auto">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold">EasyFill</h1>
         <div className="flex items-center space-x-2">
@@ -157,16 +198,16 @@ function App() {
         </div>
       </div>
 
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">
-          Trigger Symbol
+      <div className="flex items-center space-x-2 mb-4">
+        <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+          Trigger Symbol:
         </label>
         <Input
           type="text"
           value={triggerSymbol}
           onChange={(e) => setTriggerSymbol(e.target.value)}
           maxLength={1}
-          className="mt-1"
+          className="w-full h-8"
         />
       </div>
 
@@ -188,6 +229,22 @@ function App() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.name}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {filteredSnippets.map((snippet) => (
               <Card
                 key={snippet.id}
@@ -201,6 +258,9 @@ function App() {
                     </div>
                     <div className="text-sm text-gray-500">
                       {snippet.content.substring(0, 30)}...
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Category: {snippet.category || "Uncategorized"}
                     </div>
                   </div>
                   <div className="flex space-x-2">
@@ -221,27 +281,6 @@ function App() {
               </Card>
             ))}
           </div>
-          <div className="absolute bottom-0 flex space-x-4 mb-4">
-            <Button
-              onClick={exportSnippets}
-              className="bg-transparent text-gray-700 hover:bg-gray-200 w-full"
-            >
-              Export Snippets
-            </Button>
-            <Button
-              onClick={() => fileInputRef.current?.click()}
-              className="bg-transparent text-gray-700 hover:bg-gray-200 w-full"
-            >
-              Import Snippets
-            </Button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              style={{ display: "none" }}
-              accept="application/json"
-              onChange={importSnippets}
-            />
-          </div>
         </TabsContent>
         <TabsContent value="add-snippets">
           <div className="space-y-4 mt-4">
@@ -253,8 +292,14 @@ function App() {
                 onChange={(e) => setNewCommand(e.target.value)}
               />
               <p className="text-xs text-gray-500 mt-1">
-                Tip: Make it easy to remember. Use {triggerSymbol}command to
-                trigger.
+                {newCommand === "" ? (
+                  "Tip: Make it easier to remember"
+                ) : (
+                  <>
+                    Use {triggerSymbol}
+                    {newCommand} to expand the snippet.
+                  </>
+                )}
               </p>
             </div>
             <div>
@@ -269,12 +314,81 @@ function App() {
               />
               <p className="text-xs text-gray-500 mt-1">Max: 500 words</p>
             </div>
+            <div>
+              <label className="block mb-1 text-sm font-medium">Category</label>
+              <div className="flex items-center space-x-2">
+                <Select
+                  value={selectedCategory}
+                  onValueChange={setSelectedCategory}
+                  disabled={categories.length === 0}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue
+                      placeholder={
+                        categories.length === 0
+                          ? "No categories added, add one"
+                          : "Select a category"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowNewCategoryInput(!showNewCategoryInput)}
+                >
+                  <FolderPlus size={16} />
+                </Button>
+              </div>
+            </div>
+            {showNewCategoryInput && (
+              <div className="flex items-center space-x-2">
+                <Input
+                  placeholder="New category name"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                />
+                <Button onClick={addCategory}>
+                  <FolderPlus size={16} />
+                </Button>
+              </div>
+            )}
             <Button
               className="w-full bg-black text-white hover:bg-gray-800"
               onClick={saveSnippet}
             >
               {editingSnippet ? "Edit snippet" : "Add snippet"}
             </Button>
+            <div className="flex justify-between space-x-2 mt-4">
+              <Button
+                onClick={exportSnippets}
+                className="flex-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                <Download size={16} className="mr-2" />
+                Export
+              </Button>
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                <Upload size={16} className="mr-2" />
+                Import
+              </Button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: "none" }}
+                accept="application/json"
+                onChange={importSnippets}
+              />
+            </div>
           </div>
         </TabsContent>
       </Tabs>

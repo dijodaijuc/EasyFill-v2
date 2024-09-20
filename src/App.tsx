@@ -9,6 +9,8 @@ import {
   Trash2,
   FolderPlus,
   Upload,
+  Moon,
+  Sun,
   Download,
   Copy,
 } from "lucide-react";
@@ -48,6 +50,7 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
     chrome.storage.local.get(
@@ -59,6 +62,24 @@ function App() {
         if (result.triggerSymbol) setTriggerSymbol(result.triggerSymbol);
       }
     );
+  }, []);
+
+  useEffect(() => {
+    // Check for user's preferred color scheme
+    const savedMode = localStorage.getItem("darkMode");
+    if (savedMode) {
+      setDarkMode(JSON.parse(savedMode));
+      return;
+    }
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (event: MediaQueryListEvent) => {
+      setDarkMode(event.matches);
+    };
+    setDarkMode(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -201,24 +222,47 @@ function App() {
     );
   };
 
+  useEffect(() => {
+    localStorage.setItem("darkMode", JSON.stringify(darkMode));
+  }, [darkMode]);
+
   return (
-    <div className="w-80 h-[600px] px-4 py-4 overflow-y-auto">
+    <div
+      className={`w-80 h-[600px] px-4 py-4 ${
+        darkMode ? "bg-gray-900 text-white" : "bg-white text-black"
+      }`}
+    >
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold">EasyFill</h1>
         <div className="flex items-center space-x-2">
-          <span className="text-xs font-medium text-gray-500">Auto detect</span>
+          <span
+            className={`text-xs font-medium 
+          ${darkMode ? "text-white" : "text-gray-500"}`}
+          >
+            Auto detect
+          </span>
           <Switch
             checked={autoDetect}
             onCheckedChange={(checked) => setAutoDetect(checked)}
+            darkMode={darkMode}
           />
+          {darkMode ? (
+            <Moon size={16} onClick={() => setDarkMode(!darkMode)} />
+          ) : (
+            <Sun size={16} onClick={() => setDarkMode(!darkMode)} />
+          )}
         </div>
       </div>
 
       <div className="flex items-center space-x-2 mb-4">
-        <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+        <label
+          className={`text-sm font-medium whitespace-nowrap
+          ${darkMode ? "text-white" : "text-gray-700"}`}
+        >
           Trigger Symbol:
         </label>
         <Input
+          darkMode={darkMode}
           type="text"
           value={triggerSymbol}
           onChange={(e) => setTriggerSymbol(e.target.value)}
@@ -228,18 +272,21 @@ function App() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="snippets">Snippets</TabsTrigger>
-          <TabsTrigger value="add-snippets">
+        <TabsList darkMode={darkMode} className="grid w-full grid-cols-2">
+          <TabsTrigger darkMode={darkMode} value="snippets">
+            Snippets
+          </TabsTrigger>
+          <TabsTrigger darkMode={darkMode} value="add-snippets">
             {editingSnippet ? "Edit Snippet" : "Add Snippet"}
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="snippets">
+        <TabsContent darkMode={darkMode} value="snippets">
           <div className="space-y-4 mt-4">
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
               <Input
                 placeholder="Type a command or search..."
+                darkMode={darkMode}
                 className="pl-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -263,8 +310,9 @@ function App() {
             </Select>
             {filteredSnippets.map((snippet) => (
               <Card
+                darkMode={darkMode}
                 key={snippet.id}
-                className="bg-white rounded-md border shadow-none"
+                className="rounded-md border shadow-none"
               >
                 <CardContent className="p-4 flex items-center justify-between">
                   <div>
@@ -304,12 +352,13 @@ function App() {
             ))}
           </div>
         </TabsContent>
-        <TabsContent value="add-snippets">
+        <TabsContent darkMode={darkMode} value="add-snippets">
           <div className="space-y-4 mt-4">
             <div>
               <label className="block mb-1 text-sm font-medium">Command</label>
               <Input
                 placeholder="Add your command"
+                darkMode={darkMode}
                 value={newCommand}
                 onChange={(e) => setNewCommand(e.target.value)}
               />
@@ -362,17 +411,22 @@ function App() {
                   </SelectContent>
                 </Select>
                 <Button
+                  darkMode={darkMode}
                   variant="outline"
                   size="icon"
                   onClick={() => setShowNewCategoryInput(!showNewCategoryInput)}
                 >
-                  <FolderPlus size={16} />
+                  <FolderPlus
+                    className={`${darkMode ? "text-black" : ""}`}
+                    size={16}
+                  />
                 </Button>
               </div>
             </div>
             {showNewCategoryInput && (
               <div className="flex items-center space-x-2">
                 <Input
+                  darkMode={darkMode}
                   placeholder="New category name"
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
@@ -383,22 +437,37 @@ function App() {
               </div>
             )}
             <Button
-              className="w-full bg-black text-white hover:bg-gray-800"
+              darkMode={darkMode}
+              className={`w-full text-white ${
+                darkMode
+                  ? " bg-gray-800 hover:bg-gray-600 "
+                  : " hover:bg-gray-800 bg-black"
+              }`}
               onClick={saveSnippet}
             >
               {editingSnippet ? "Edit snippet" : "Add snippet"}
             </Button>
             <div className="flex justify-between space-x-2 mt-4">
               <Button
+                darkMode={darkMode}
                 onClick={exportSnippets}
-                className="flex-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                className={`flex-1 ${
+                  darkMode
+                    ? "hover:bg-gray-800"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
               >
                 <Download size={16} className="mr-2" />
                 Export
               </Button>
               <Button
+                darkMode={darkMode}
                 onClick={() => fileInputRef.current?.click()}
-                className="flex-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                className={`flex-1 ${
+                  darkMode
+                    ? "hover:bg-gray-800"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
               >
                 <Upload size={16} className="mr-2" />
                 Import

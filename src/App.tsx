@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,20 +22,57 @@ function App() {
   const [activeTab, setActiveTab] = useState("snippets");
   const [editingSnippet, setEditingSnippet] = useState<Snippet | null>(null);
   const [triggerSymbol, setTriggerSymbol] = useState("-");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const exportSnippets = () => {
+    const dataStr = JSON.stringify(snippets, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "snippets.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importSnippets = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const importedSnippets = JSON.parse(event.target?.result as string);
+          if (Array.isArray(importedSnippets)) {
+            setSnippets(importedSnippets);
+            chrome.storage.local.set({ snippets: importedSnippets });
+            alert("Snippets imported successfully!");
+          } else {
+            alert("Invalid file format");
+          }
+        } catch (error) {
+          alert("Error reading file");
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
 
   useEffect(() => {
     // Load snippets, autoDetect, and triggerSymbol from Chrome storage when the component mounts
-    chrome.storage.local.get(["snippets", "autoDetect", "triggerSymbol"], (result) => {
-      if (result.snippets) {
-        setSnippets(result.snippets);
+    chrome.storage.local.get(
+      ["snippets", "autoDetect", "triggerSymbol"],
+      (result) => {
+        if (result.snippets) {
+          setSnippets(result.snippets);
+        }
+        if (result.autoDetect !== undefined) {
+          setAutoDetect(result.autoDetect);
+        }
+        if (result.triggerSymbol) {
+          setTriggerSymbol(result.triggerSymbol);
+        }
       }
-      if (result.autoDetect !== undefined) {
-        setAutoDetect(result.autoDetect);
-      }
-      if (result.triggerSymbol) {
-        setTriggerSymbol(result.triggerSymbol);
-      }
-    });
+    );
   }, []);
 
   useEffect(() => {
@@ -121,7 +158,9 @@ function App() {
       </div>
 
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">Trigger Symbol</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Trigger Symbol
+        </label>
         <Input
           type="text"
           value={triggerSymbol}
@@ -156,7 +195,10 @@ function App() {
               >
                 <CardContent className="p-4 flex items-center justify-between">
                   <div>
-                    <div className="font-semibold">{triggerSymbol}{snippet.command}</div>
+                    <div className="font-semibold">
+                      {triggerSymbol}
+                      {snippet.command}
+                    </div>
                     <div className="text-sm text-gray-500">
                       {snippet.content.substring(0, 30)}...
                     </div>
@@ -179,6 +221,27 @@ function App() {
               </Card>
             ))}
           </div>
+          <div className="absolute bottom-0 flex space-x-4 mb-4">
+            <Button
+              onClick={exportSnippets}
+              className="bg-transparent text-gray-700 hover:bg-gray-200 w-full"
+            >
+              Export Snippets
+            </Button>
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              className="bg-transparent text-gray-700 hover:bg-gray-200 w-full"
+            >
+              Import Snippets
+            </Button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              accept="application/json"
+              onChange={importSnippets}
+            />
+          </div>
         </TabsContent>
         <TabsContent value="add-snippets">
           <div className="space-y-4 mt-4">
@@ -190,7 +253,8 @@ function App() {
                 onChange={(e) => setNewCommand(e.target.value)}
               />
               <p className="text-xs text-gray-500 mt-1">
-                Tip: Make it easy to remember. Use {triggerSymbol}command to trigger.
+                Tip: Make it easy to remember. Use {triggerSymbol}command to
+                trigger.
               </p>
             </div>
             <div>

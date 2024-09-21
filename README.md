@@ -47,15 +47,11 @@ This extension is built using React and TypeScript. To set up the development en
    npm install
    ```
 
-2. Run the development server:
-   ```
-   npm run dev
-   ```
-
-3. Build the extension:
+2. Build the extension:
    ```
    npm run build
    ```
+3. Load unpacked the generated dist folder in chrome://extensions/, after enabling dev mode.
 
 ## Acknowledgments
 

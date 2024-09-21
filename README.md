@@ -1,50 +1,63 @@
-# React + TypeScript + Vite
+# EasyFill
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+EasyFill is a powerful and user-friendly Chrome extension designed to streamline your typing experience by managing and expanding text snippets. With EasyFill, you can create, organize, and quickly insert frequently used text snippets across any website.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Snippet Management**: Create, edit, and delete text snippets with ease.
+- **Category Organization**: Organize your snippets into categories for better management.
+- **Quick Expansion**: Use customizable trigger symbols to quickly expand your snippets.
+- **Search Functionality**: Easily find your snippets with the built-in search feature.
+- **Import/Export**: Backup and restore your snippets and categories.
+- **Auto-detect Mode**: Optionally enable auto-detection of snippet triggers.
+- **Customizable Trigger Symbol**: Set your preferred trigger symbol for snippet expansion.
 
-## Expanding the ESLint configuration
+## Installation
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+1. Clone this repository or download the source code.
+2. Open Google Chrome and navigate to `chrome://extensions`.
+3. Enable "Developer mode" in the top right corner.
+4. Click "Load unpacked" and select the directory containing the extension files.
 
-- Configure the top-level `parserOptions` property like this:
+## Usage
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+1. Click on the EasyFill icon in your Chrome toolbar to open the extension popup.
+2. Use the "Add Snippet" tab to create new snippets:
+   - Enter a command (trigger) for your snippet.
+   - Type or paste the content of your snippet.
+   - Select or create a category for the snippet.
+3. In the "Snippets" tab, you can view, search, edit, or delete your existing snippets.
+4. To use a snippet, type your trigger symbol followed by the snippet command in any text field on a webpage.
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+## Customization
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+- **Trigger Symbol**: Change your trigger symbol in the extension popup.
+- **Auto-detect**: Toggle the auto-detect feature to automatically expand snippets as you type.
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+## Import/Export
+
+- Use the Import/Export buttons at the bottom of the popup to backup or restore your snippets and categories.
+
+## Development
+
+This extension is built using React and TypeScript. To set up the development environment:
+
+1. Install dependencies:
+   ```
+   npm install
+   ```
+
+2. Run the development server:
+   ```
+   npm run dev
+   ```
+
+3. Build the extension:
+   ```
+   npm run build
+   ```
+
+## Acknowledgments
+
+- This project uses [shadcn/ui](https://ui.shadcn.com/) for UI components.
+- Icons provided by [Lucide](https://lucide.dev/).
